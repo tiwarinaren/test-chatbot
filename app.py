@@ -19,29 +19,30 @@ if prompt:
             "https://tiny-lab-eef2.tiwarinaren.workers.dev/chat",
             json={"messages": st.session_state.msgs, "stream": True},
             headers={"Content-Type": "application/json"},
-            stream=True,
             timeout=30,  # Add timeout to prevent hanging
         )
-        for line in r.iter_lines():
-            if line:
-                try:
-                    # Decode the line and parse as JSON
-                    decoded_line = line.decode('utf-8').strip()
-                    if decoded_line:
-                        # Debug: print the line content
-                        print(f"Received line: {repr(decoded_line)}")
-                        parsed = json.loads(decoded_line)
-                        if "response" in parsed:
-                            token = parsed["response"]
-                            text += token
-                            placeholder.markdown(text + "▌")
-                        else:
-                            # Skip lines without response field
-                            continue
-                except (json.JSONDecodeError, UnicodeDecodeError, KeyError) as e:
-                    # Debug: print the error
-                    print(f"Error processing line: {e}, line: {repr(line)}")
-                    # Skip lines that can't be parsed or don't have response field
-                    continue
+
+        # The worker returns a JSON array, not streaming
+        try:
+            response_data = r.json()
+            # Assuming the response is an array with the last item being the chat response
+            if isinstance(response_data, list) and len(response_data) > 0:
+                # Get the last response (chat style)
+                chat_response = response_data[-1]
+                if "response" in chat_response:
+                    text = chat_response["response"]
+                    placeholder.markdown(text)
+                else:
+                    st.error("Error: Unexpected response format from API")
+                    st.stop()
+            else:
+                st.error("Error: Invalid response from API")
+                st.stop()
+        except json.JSONDecodeError as e:
+            st.error(f"Error parsing API response: {e}")
+            st.stop()
+        except Exception as e:
+            st.error(f"API request failed: {e}")
+            st.stop()
         placeholder.markdown(text)
     st.session_state.msgs.append({"role":"assistant","content":text})
