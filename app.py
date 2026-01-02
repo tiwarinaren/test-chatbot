@@ -24,6 +24,10 @@ if prompt:
 
         # The worker returns a JSON array, not streaming
         try:
+            if r.status_code != 200:
+                st.error(f"API request failed with status {r.status_code}: {r.text}")
+                st.stop()
+
             response_data = r.json()
             # Assuming the response is an array with the last item being the chat response
             if isinstance(response_data, list) and len(response_data) > 0:
@@ -38,11 +42,25 @@ if prompt:
             else:
                 st.error("Error: Invalid response from API")
                 st.stop()
+
+        except requests.exceptions.Timeout:
+            st.error("API request timed out. Please try again.")
+            st.stop()
+        except requests.exceptions.ConnectionError:
+            st.error("Failed to connect to API. Please check your internet connection.")
+            st.stop()
         except json.JSONDecodeError as e:
             st.error(f"Error parsing API response: {e}")
             st.stop()
         except Exception as e:
-            st.error(f"API request failed: {e}")
+            # Check if the response contains an error message
+            try:
+                error_data = r.json()
+                if "error" in error_data:
+                    st.error(f"API Error: {error_data['error']}")
+                else:
+                    st.error(f"Unexpected error: {e}")
+            except:
+                st.error(f"Unexpected error: {e}")
             st.stop()
-        placeholder.markdown(text)
     st.session_state.msgs.append({"role":"assistant","content":text})
