@@ -16,7 +16,7 @@ if prompt:
         placeholder = st.empty()
         text = ""
         r = requests.post(
-            "https://purple-bonus-67e0.tiwarinaren.workers.dev/",
+            "https://tiny-lab-eef2.tiwarinaren.workers.dev/chat",
             json={"messages": st.session_state.msgs, "stream": True},
             headers={"Content-Type": "application/json"},
             stream=True,
