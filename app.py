@@ -29,18 +29,18 @@ if prompt:
                 st.stop()
 
             response_data = r.json()
-            # Assuming the response is an array with the last item being the chat response
-            if isinstance(response_data, list) and len(response_data) > 0:
-                # Get the last response (chat style)
-                chat_response = response_data[-1]
-                if "response" in chat_response:
-                    text = chat_response["response"]
-                    placeholder.markdown(text)
-                else:
-                    st.error("Error: Unexpected response format from API")
-                    st.stop()
+
+            # Check if response contains an error
+            if "error" in response_data:
+                st.error(f"API Error: {response_data['error']}")
+                st.stop()
+
+            # Handle single response object
+            if "response" in response_data:
+                text = response_data["response"]
+                placeholder.markdown(text)
             else:
-                st.error("Error: Invalid response from API")
+                st.error("Error: Unexpected response format from API")
                 st.stop()
 
         except requests.exceptions.Timeout:
