@@ -20,11 +20,28 @@ if prompt:
             json={"messages": st.session_state.msgs, "stream": True},
             headers={"Content-Type": "application/json"},
             stream=True,
+            timeout=30,  # Add timeout to prevent hanging
         )
         for line in r.iter_lines():
             if line:
-                token = json.loads(line)["response"]
-                text += token
-                placeholder.markdown(text + "▌")
+                try:
+                    # Decode the line and parse as JSON
+                    decoded_line = line.decode('utf-8').strip()
+                    if decoded_line:
+                        # Debug: print the line content
+                        print(f"Received line: {repr(decoded_line)}")
+                        parsed = json.loads(decoded_line)
+                        if "response" in parsed:
+                            token = parsed["response"]
+                            text += token
+                            placeholder.markdown(text + "▌")
+                        else:
+                            # Skip lines without response field
+                            continue
+                except (json.JSONDecodeError, UnicodeDecodeError, KeyError) as e:
+                    # Debug: print the error
+                    print(f"Error processing line: {e}, line: {repr(line)}")
+                    # Skip lines that can't be parsed or don't have response field
+                    continue
         placeholder.markdown(text)
     st.session_state.msgs.append({"role":"assistant","content":text})
