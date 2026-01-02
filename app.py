@@ -37,8 +37,36 @@ if prompt:
 
             # Handle single response object
             if "response" in response_data:
-                text = response_data["response"]
-                placeholder.markdown(text)
+                response_content = response_data["response"]
+
+                # Handle different response formats
+                if isinstance(response_content, str):
+                    # Clean the text - remove any JSON formatting if present
+                    text = response_content.strip()
+                    if text.startswith('{') and text.endswith('}'):
+                        # If it looks like JSON, try to extract just the message
+                        try:
+                            parsed = json.loads(text)
+                            if "response" in parsed:
+                                text = parsed["response"]
+                            elif "message" in parsed:
+                                text = parsed["message"]
+                            else:
+                                text = str(parsed)
+                        except:
+                            pass  # Keep original text if parsing fails
+                    placeholder.markdown(text)
+                elif isinstance(response_content, dict):
+                    # If response is a dict, look for the actual message
+                    if "response" in response_content:
+                        text = str(response_content["response"])
+                    elif "message" in response_content:
+                        text = str(response_content["message"])
+                    else:
+                        text = str(response_content)
+                    placeholder.markdown(text)
+                else:
+                    placeholder.markdown(str(response_content))
             else:
                 st.error("Error: Unexpected response format from API")
                 st.stop()
