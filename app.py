@@ -23,20 +23,8 @@ if prompt:
         )
         for line in r.iter_lines():
             if line:
-                try:
-                    # Decode the line and parse as JSON
-                    decoded_line = line.decode('utf-8').strip()
-                    if decoded_line:
-                        parsed = json.loads(decoded_line)
-                        if "response" in parsed:
-                            token = parsed["response"]
-                            text += token
-                            placeholder.markdown(text + "▌")
-                        else:
-                            # Skip lines without response field
-                            continue
-                except (json.JSONDecodeError, UnicodeDecodeError, KeyError) as e:
-                    # Skip lines that can't be parsed or don't have response field
-                    continue
+                token = json.loads(line)["response"]
+                text += token
+                placeholder.markdown(text + "▌")
         placeholder.markdown(text)
     st.session_state.msgs.append({"role":"assistant","content":text})
